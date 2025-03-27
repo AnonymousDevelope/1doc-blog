@@ -1,0 +1,5 @@
+super admin login qilish uchun
+{
+  "email": "davron@example.com",
+  "password": "123"
+}
