@@ -21,7 +21,6 @@ const uploadImage = async (file, folder = "blogs") => {
     throw new Error(`Failed to upload image to Cloudinary: ${error.message}`);
   }
 };
-
 // Rasmni o'chirish funksiyasi
 const deleteImage = async (publicId) => {
   try {
@@ -30,7 +29,6 @@ const deleteImage = async (publicId) => {
     throw new Error(`Failed to delete image from Cloudinary: ${error.message}`);
   }
 };
-
 // Rasmni transformatsiya qilish (masalan, hajmini o'zgartirish)
 const getTransformedImageUrl = (publicId, options = {}) => {
   return cloudinary.url(publicId, {

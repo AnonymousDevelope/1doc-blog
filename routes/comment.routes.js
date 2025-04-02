@@ -12,7 +12,8 @@ router.post("/:id/comments", protect, async (req, res) => {
     const { text } = req.body;
     const blog = await Blog.findById(req.params.id);
     
-    if (!blog) return res.status(404).json({ message: "Blog not found" });
+    if (!blog) return res.status(404).jcls
+    son({ message: "Blog not found" });
 
     const newComment = { user: req.user._id, text };
     blog.comments.push(newComment);
