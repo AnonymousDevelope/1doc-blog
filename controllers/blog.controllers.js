@@ -6,10 +6,8 @@ exports.getBlogs = async (req, res) => {
     const page = parseInt(req.query.page) || 1; // Sahifa raqami (default: 1)
     const limit = parseInt(req.query.limit) || 10; // Har bir sahifadagi bloglar soni (default: 10)
     const skip = (page - 1) * limit; // Qancha blog o'tkazib yuborish kerakligini hisoblash
-
     // Umumiy bloglar sonini olish
     const total = await Blog.countDocuments();
-
     // Bloglarni pagination bilan olish
     const blogs = await Blog.find()
       .skip(skip)

@@ -85,19 +85,23 @@ router.get("/", getBlogs);
 // ✅ Get Single Blog by ID
 router.get("/:id", async (req, res) => {
   try {
-    const locale = req.query.locale || "uz";
+    const locale = req.query.locale;
     const blog = await Blog.findById(req.params.id).populate("author", "name email");
     if (!blog) return res.status(404).json({ message: "Blog not found" });
 
-    // 🔼 Increment view count
+    // 🔼 Ko'rish sonini oshirish
     blog.views += 1;
     await blog.save();
 
-    // Tanlangan tilga moslashtirish
+    // ✨ Agar locale bo'lsa faqat tanlangan til, bo'lmasa barcha tarjimalar
     const localizedBlog = {
       id: blog._id,
-      title: blog.translations[locale]?.title || blog.translations["uz"].title,
-      content: blog.translations[locale]?.content || blog.translations["uz"].content,
+      title: locale
+        ? blog.translations[locale]?.title || blog.translations["uz"].title
+        : blog.translations, // to'liq object
+      content: locale
+        ? blog.translations[locale]?.content || blog.translations["uz"].content
+        : blog.translations, // to'liq object
       image: blog.image,
       readTime: blog.readTime,
       views: blog.views,
@@ -112,6 +116,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // ✅ Edit Blog (Only the Author Can Edit)
 router.put("/:id", protect, async (req, res) => {
