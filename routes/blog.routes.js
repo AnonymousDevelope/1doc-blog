@@ -35,20 +35,26 @@ router.post("/", protect, upload.single("image"), async (req, res) => {
       try {
         translations = JSON.parse(translations);
       } catch (err) {
-        return res.status(400).json({ message: "Invalid translations format. Must be valid JSON." });
+        return res.status(400).json({
+          message: "Invalid translations format. Must be valid JSON.",
+        });
       }
     }
 
     // `translations` ob'ekti ekanligini tekshirish
     if (!translations || typeof translations !== "object") {
-      return res.status(400).json({ message: "Translations object is required" });
+      return res
+        .status(400)
+        .json({ message: "Translations object is required" });
     }
 
     // Har bir til uchun title va content mavjudligini tekshirish
     const supportedLocales = ["uz", "ru", "uz_cyrl", "qq", "en"];
     for (const locale of supportedLocales) {
       if (!translations[locale]?.title || !translations[locale]?.content) {
-        return res.status(400).json({ message: `Title and content are required for locale: ${locale}` });
+        return res.status(400).json({
+          message: `Title and content are required for locale: ${locale}`,
+        });
       }
     }
 
@@ -86,7 +92,10 @@ router.get("/", getBlogs);
 router.get("/:id", async (req, res) => {
   try {
     const locale = req.query.locale;
-    const blog = await Blog.findById(req.params.id).populate("author", "name email");
+    const blog = await Blog.findById(req.params.id).populate(
+      "author",
+      "name email",
+    );
     if (!blog) return res.status(404).json({ message: "Blog not found" });
 
     // 🔼 Ko'rish sonini oshirish
@@ -117,15 +126,16 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-
 // ✅ Edit Blog (Only the Author Can Edit)
-router.put("/:id", protect, async (req, res) => {
+router.put("/:id", protect, upload.single("image"), async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ message: "Blog not found" });
 
     if (blog.author.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized to edit this post" });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to edit this post" });
     }
 
     // Yangilangan ma'lumotlarni qabul qilish
@@ -136,7 +146,9 @@ router.put("/:id", protect, async (req, res) => {
       try {
         translations = JSON.parse(translations);
       } catch (err) {
-        return res.status(400).json({ message: "Invalid translations format. Must be valid JSON." });
+        return res.status(400).json({
+          message: "Invalid translations format. Must be valid JSON.",
+        });
       }
     }
 
@@ -153,9 +165,24 @@ router.put("/:id", protect, async (req, res) => {
     }
 
     if (categories) blog.categories = categories.split(",");
-    if (image) blog.image = image;
+
+    // Only upload if a new file is present
+    if (req.file) {
+      let imageData = { url: "", publicId: "" };
+
+      imageData = await uploadImage(req.file, "blogs");
+
+      // Delete the temporarily stored file
+      fs.unlinkSync(req.file.path);
+
+      // Update blog image with uploaded Cloudinary URL
+      blog.image = imageData.url;
+    } else {
+      blog.image = image;
+    }
 
     await blog.save();
+
     res.json({ message: "Blog updated", blog });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -168,8 +195,13 @@ router.delete("/:id", protect, async (req, res) => {
     const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ message: "Blog not found" });
 
-    if (blog.author.toString() !== req.user._id.toString() && req.user.role !== "superadmin") {
-      return res.status(403).json({ message: "Not authorized to delete this post" });
+    if (
+      blog.author.toString() !== req.user._id.toString() &&
+      req.user.role !== "superadmin"
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this post" });
     }
 
     // Cloudinary'dan rasmni o'chirish
