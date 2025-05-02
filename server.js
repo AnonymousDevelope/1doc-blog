@@ -6,6 +6,7 @@ const blogRoutes = require("./routes/blog.routes");
 const authRoutes = require("./routes/auth.routes");
 const commentRoutes = require("./routes/comment.routes");
 const adminRoutes = require("./routes/admin.routes");
+const teamRoutes = require("./routes/team.routes");
 dotenv.config();
 connectDB();
 const app = express();
@@ -18,6 +19,7 @@ app.use("/api/blogs", blogRoutes); // Blog management
 app.use("/api/auth", authRoutes); // Admin authentication
 app.use("/api/blogs", commentRoutes); // Comment management
 app.use("/api/admin", adminRoutes); // Admin management
+app.use("/api/team",teamRoutes);
 // Default Route
 app.get("/", (req, res) => {
   res.send("Blog API is running...");
