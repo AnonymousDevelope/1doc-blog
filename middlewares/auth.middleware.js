@@ -27,7 +27,5 @@ const isSuperAdmin = (req, res, next) => {
   }
   next();
 };
-
 module.exports = { protect, isSuperAdmin };
-
 // super admin bilan muammo

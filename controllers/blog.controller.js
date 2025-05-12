@@ -2,53 +2,68 @@ const Blog = require("../models/Blog");
 const { uploadImage, deleteImage } = require("../utils/cloudinaryService");
 const fs = require("fs");
 
-// ✅ Get All Blogs with Filters & Pagination
+//get all blogs
 exports.getBlogs = async (req, res) => {
   try {
-    const locale = req.query.locale || "uz"; // Default til: uz
-    const page = parseInt(req.query.page) || 1; // Sahifa raqami (default: 1)
-    const limit = parseInt(req.query.limit) || 10; // Har bir sahifadagi bloglar soni (default: 10)
-    const skip = (page - 1) * limit; // Qancha blog o'tkazib yuborish kerakligini hisoblash
+    const locale = req.query.locale || ""; // Default to empty string if locale is not provided
+    const page = parseInt(req.query.page) || 1; // Page number (default: 1)
+    const limit = parseInt(req.query.limit) || 10; // Blogs per page (default: 10)
+    const skip = (page - 1) * limit; // Calculate how many blogs to skip
 
-    // Umumiy bloglar sonini olish
+    // Get total number of blogs
     const total = await Blog.countDocuments();
 
-    // Bloglarni pagination bilan olish
+    // Fetch blogs with pagination, populate author and comments
     const blogs = await Blog.find()
       .skip(skip)
       .limit(limit)
-      .populate("author", "name email") // Faqat name va email maydonlarini olish
-      .populate("comments.user", "name") // Izoh qoldirgan foydalanuvchidan faqat name olish
-      .sort({ publishedAt: -1 }); // Eng yangi bloglar birinchi
+      .populate("author", "name email") // Only fetch name and email for author
+      .populate("comments.user", "name") // Only fetch name for comment user
+      .sort({ publishedAt: -1 }); // Sort by newest first
 
-    // Bloglarni tanlangan tilga moslashtirish
-    const localizedBlogs = blogs.map((blog) => ({
-      id: blog._id.toString(),
-      title: blog.translations[locale]?.title || blog.translations["uz"].title,
-      content: blog.translations[locale]?.content || blog.translations["uz"].content,
-      image: blog.image,
-      readTime: blog.readTime,
-      views: blog.views,
-      author: {
-        _id: blog.author._id.toString(),
-        name: blog.author.name,
-        email: blog.author.email,
-      },
-      categories: blog.categories,
-      comments: blog.comments.map((comment) => ({
-        user: {
-          _id: comment.user._id.toString(),
-          name: comment.user.name,
+    // Transform blogs based on locale
+    const transformedBlogs = blogs.map((blog) => {
+      const baseBlog = {
+        id: blog._id.toString(),
+        image: blog.image,
+        readTime: blog.readTime,
+        views: blog.views,
+        author: {
+          _id: blog.author._id.toString(),
+          name: blog.author.name,
+          email: blog.author.email,
         },
-        text: comment.text,
-        createdAt: comment.createdAt,
-      })),
-      publishedAt: blog.publishedAt,
-    }));
+        categories: blog.categories,
+        comments: blog.comments.map((comment) => ({
+          user: {
+            _id: comment.user._id.toString(),
+            name: comment.user.name,
+          },
+          text: comment.text,
+          createdAt: comment.createdAt,
+        })),
+        publishedAt: blog.publishedAt,
+      };
 
-    // Response formatini frontendga moslashtirish
+      // If locale is provided, return only the localized title and content
+      if (locale) {
+        return {
+          ...baseBlog,
+          title: blog.translations[locale]?.title || blog.translations["uz"]?.title || "",
+          content: blog.translations[locale]?.content || blog.translations["uz"]?.content || "",
+        };
+      }
+
+      // If no locale is provided, return the full translations object
+      return {
+        ...baseBlog,
+        translations: blog.translations,
+      };
+    });
+
+    // Send response in the format expected by the frontend
     res.status(200).json({
-      blogs: localizedBlogs,
+      blogs: transformedBlogs,
       total,
       page,
       limit,
@@ -58,7 +73,6 @@ exports.getBlogs = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
 // ✅ Create Blog (Only Admins)
 exports.addBlog = async (req, res) => {
   try {
