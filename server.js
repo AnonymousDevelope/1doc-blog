@@ -1,7 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
-const cookieParser = require("cookie-parser")
+const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const blogRoutes = require("./routes/blog.routes");
 const authRoutes = require("./routes/auth.routes");
@@ -12,10 +12,7 @@ dotenv.config();
 connectDB();
 const app = express();
 // Middleware
-app.use(cors({
-  origin: "http://localhost:3000", // yoki frontend domeni
-  credentials: true
-}));
+app.use(cookieParser());
 app.use(express.json()); // Parse JSON request body
 app.use(cors()); // Enable CORS for frontend communication
 app.use("/uploads", express.static("uploads")); // Serve uploaded images
@@ -25,7 +22,6 @@ app.use("/api/auth", authRoutes); // Admin authentication
 app.use("/api/blogs", commentRoutes); // Comment management
 app.use("/api/admin", adminRoutes); // Admin management
 app.use("/api/team",teamRoutes);
-app.use(cookieParser());
 // Default Route
 app.get("/", (req, res) => {
   res.send("Blog API is running...");

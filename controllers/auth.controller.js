@@ -1,7 +1,6 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -15,23 +14,32 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
+    console.log("Log In");
     // Tokenni cookie orqali yuborish
-    res.json({ token,user });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // HTTPS bo'lsa true
+      sameSite: "strict",
+      maxAge: 60 * 60 * 1000, // 1 soat
+    });
+    res.json({ message: "Login successful",token, user });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 exports.verifyToken = (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "No token provided" });
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next(); // faqat next()
+    res.json({
+      valid:true,
+      message:"success verify",
+      token:req.headers.authorization.split(' ').at(1)
+    })                                                                     
+    next();
   } catch (error) {
     res.status(401).json({ message: "Unauthorized, Invalid Token", valid: false });
   }
 };
+
 exports.logout = async (req, res) => {
   try {
     res.clearCookie("token", {
